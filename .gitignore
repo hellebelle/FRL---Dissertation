@@ -1,0 +1,6 @@
+# created by virtualenv automatically
+NULL
+**/Lib
+**/Scripts
+pyvenv.cfg
+det_out.xml
