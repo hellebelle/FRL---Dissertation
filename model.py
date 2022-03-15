@@ -73,19 +73,25 @@ class Q_Learning_Model:
         
         # while step < 2000:
         while traci.simulation.getMinExpectedNumber() > 0:
-            num_vehicles = traci.vehicle.getIDCount()
-            vehicles = traci.vehicle.getIDList()
-            avg_waiting_time = 0
-            if num_vehicles > 0:
-                for i in vehicles:
-                    avg_waiting_time += traci.vehicle.getWaitingTime(i)
+            num_vehicles_at_det = traci.inductionloop.getLastStepVehicleNumber(self.det_id)
+            vehicles_at_det = traci.inductionloop.getLastStepVehicleIDs(self.det_id)
+            # num_vehicles = traci.vehicle.getIDCount()
+            # vehicles = traci.vehicle.getIDList()
+            # avg_waiting_time = 0
+            cummulative_waiting_time = 0
+            if num_vehicles_at_det > 0:
+                for i in vehicles_at_det:
+                    # avg_waiting_time += traci.vehicle.getWaitingTime(i)
+                    cummulative_waiting_time += traci.vehicle.getWaitingTime(i)
             
-                avg_waiting_time/=num_vehicles
+                # avg_waiting_time/=num_vehicles #avg_waiting_time of vehicle in N7
                 
                 occupancy = traci.inductionloop.getLastStepOccupancy(self.det_id)
                 #choose which action to take (i.e., where to move next)
                 action_index = self.get_next_action(row_index, column_index, epsilon)
                 # print('action:', action_index)
+
+                # if occupancy == 0: avg_waiting_time = 0 #if lane is unoccupied, waiting time on lane will be 0 (e.g while occupancy = 0,  avg_waiting_time * occupancy = 0)
 
                 #perform the chosen action, and transition to the next state (i.e., move to the next location)
                 old_row_index, old_column_index = row_index, column_index #store the old row and column indexes
@@ -96,10 +102,13 @@ class Q_Learning_Model:
                 # reward = self.rewards[row_index, column_index]
 
                 # reward = occupancy - avg_waiting_time
-                if avg_waiting_time > 1 :
-                    reward = occupancy/avg_waiting_time
+                k = 2
+                if cummulative_waiting_time > 0 and occupancy > 0 :
+                   reward = ((k**2)*occupancy)/cummulative_waiting_time
+                elif (cummulative_waiting_time > 0 and occupancy == 0):
+                   reward = -k*cummulative_waiting_time
                 else:
-                    reward = occupancy
+                   reward = (k**occupancy)
                 print('Reward', reward)
                 old_q_value = self.q_values[old_row_index, old_column_index]
                 # print("Old Q-val: ", old_q_value)
@@ -198,6 +207,7 @@ if __name__ == "__main__":
 #      [ 216.91456987  176.88815662 -109.36996045]]
 
 #after adding new rewards equation
+#reward equation: reward = occupancy - avg_waiting_time 
 # [[119.57628195 111.7960126   79.5049924 ]
 #  [134.63198407 130.01438056 174.36390165]
 #  [ 87.34932786 149.06793475 171.0526266 ]]
@@ -251,6 +261,18 @@ if __name__ == "__main__":
 # [[4.31011980e-04 4.62893250e-04 4.30326839e-04]
 #  [1.69323938e+01 5.75560752e+01 3.46351569e+01]
 #  [2.17714785e+02 1.91445248e+01 1.93877670e+01]]
+
+# k = 5
+# if avg_waiting_time > 0 and occupancy > 0 :
+#     reward = ((k**2)*occupancy)/avg_waiting_time
+# elif (avg_waiting_time > 0 and occupancy == 0):
+#     reward = -avg_waiting_time
+# else:
+#     reward = ((k**2)*occupancy)
+
+# [[1.84044701e-01 1.90123903e-01 2.03659049e-01]
+#  [6.71046897e+01 8.47560800e+03 4.87558679e+03]
+#  [6.01085943e+05 1.50306211e+04 1.64330011e+06]]
     TL_1 = Q_Learning_Model('2801474636', TL_det_lookup[TL_id])
     TL_1_Q_table = TL_1.run()
     print(TL_1.q_values)
