@@ -75,7 +75,7 @@ class Q_Learning_Model:
         waiting_times = []
         rewards = []
         episodes = 7
-        # reward = 0
+        reward = 0
         
         # while step < 2000:
         #
@@ -88,9 +88,6 @@ class Q_Learning_Model:
              while traci.simulation.getMinExpectedNumber() > 0:
                 num_vehicles_at_det = traci.inductionloop.getLastStepVehicleNumber(self.det_id)
                 vehicles_at_det = traci.inductionloop.getLastStepVehicleIDs(self.det_id)
-                # num_vehicles = traci.vehicle.getIDCount()
-                # vehicles = traci.vehicle.getIDList()
-                # avg_waiting_time = 0
                 
                 cummulative_waiting_time = 0
                 if num_vehicles_at_det > 0:
@@ -116,7 +113,8 @@ class Q_Learning_Model:
                     #receive the reward for moving to the new state, and calculate the temporal difference
                     # reward = self.rewards[row_index, column_index]
 
-                    # reward = occupancy - avg_waiting_time
+                    reward = occupancy - cummulative_waiting_time
+
                     # k = 2
                     # if cummulative_waiting_time > 0 and occupancy > 0 :
                     #     reward = ((k**2)*occupancy)/cummulative_waiting_time
@@ -125,12 +123,12 @@ class Q_Learning_Model:
                     # else:
                     #     reward = (k*occupancy)
                     
-                    if (occupancy >= 0 and occupancy <= 49):
-                        reward = -10
-                    elif (occupancy > 50 and occupancy <= 79):
-                        reward = 10
-                    else:
-                        occupancy = 100
+                    # if (occupancy >= 0 and occupancy <= 49):
+                    #     reward = -10
+                    # elif (occupancy >= 50 and occupancy <= 79):
+                    #     reward = 10
+                    # else:
+                    #     reward = 100
 
                     rewards_per_episode.append(reward)
                     print('Reward', reward)
@@ -143,7 +141,7 @@ class Q_Learning_Model:
                     
                 traci.simulationStep()
                 step +=1
-             waiting_times.append(np.average(waiting_time_per_episode))
+             waiting_times.append(np.sum(waiting_time_per_episode))
              rewards.append(np.sum(rewards_per_episode))
              self.reset_simulation()
         fig, ax = plt.subplots(1) # Creates figure fig and add an axes, ax.
@@ -153,9 +151,9 @@ class Q_Learning_Model:
         ax.set_xlabel('Episode')
         ax.set_ylabel('Cummulative Waiting Time of Vehicles')
         ax2.plot(range(1,episodes+1), rewards) #Add a straight line to the axes of the first figure.
-        ax2.set_title('Rewards per Episode')
+        ax2.set_title('Cummulative Rewards per Episode')
         ax2.set_xlabel('Episode')
-        ax2.set_ylabel('Rewards')
+        ax2.set_ylabel('Cummulative Rewards')
         fig.show() #Only shows figure 1 and removes it from the "current" stack.
         fig2.show() #Only shows figure 2 and removes it from the "current" stack.
         plt.show() #Does not show anything, because there is nothing in the "current" stack.
